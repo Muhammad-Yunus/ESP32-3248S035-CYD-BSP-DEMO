@@ -1,4 +1,4 @@
-# ESP32-3248S035-CYD-SDR
+# ESP32-3248S035-CYD-BSP-DEMO
 
 A peripheral demo for the **Sunton ESP32-3248S035** — the 3.5" 480×320
 "**CYD**" (Cheap Yellow Display) board with **capacitive GT911 touch** and a
@@ -19,7 +19,7 @@ package, and the demo app is a thin consumer of it.
 ## Repository layout
 
 ```
-ESP32-3248S035-CYD-SDR/
+ESP32-3248S035-CYD-BSP-DEMO/
 ├── .gitignore
 ├── README.md                       ← this file
 └── firmware/                       ← the ESP-IDF project
