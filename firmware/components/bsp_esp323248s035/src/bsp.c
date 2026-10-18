@@ -15,7 +15,11 @@ esp_err_t bsp_init(void)
     ESP_RETURN_ON_ERROR(bsp_tft_init(), TAG, "tft");
     ESP_RETURN_ON_ERROR(bsp_touch_init(), TAG, "touch");
     ESP_RETURN_ON_ERROR(bsp_led_init(), TAG, "led");
+#if CONFIG_BSP_AMP_DRIVER_BUZZER
     ESP_RETURN_ON_ERROR(bsp_buzzer_init(), TAG, "buzzer");
+#elif CONFIG_BSP_AMP_DRIVER_DAC
+    ESP_RETURN_ON_ERROR(bsp_audio_init(), TAG, "audio");
+#endif
     ESP_RETURN_ON_ERROR(bsp_ldr_init(), TAG, "ldr");
 
 #if CONFIG_BSP_LVGL

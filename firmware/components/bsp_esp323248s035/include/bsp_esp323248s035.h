@@ -54,7 +54,7 @@ extern "C" {
 #define BSP_LED_PIN_G           16
 #define BSP_LED_PIN_B           17
 
-/* Passive buzzer / amplifier on GPIO26 (LEDC PWM) */
+/* Passive buzzer / amplifier on GPIO26 (DAC1 / LEDC) */
 #define BSP_BUZZER_PIN          26
 
 /* LDR (light sensor) on ADC1 channel 6 */
@@ -158,8 +158,14 @@ esp_err_t bsp_led_init(void);
 esp_err_t bsp_led_set_rgb(uint8_t r, uint8_t g, uint8_t b);
 
 /* ------------------------------------------------------------------ */
-/* Buzzer / amplifier                                                  */
+/* Buzzer / amplifier (GPIO26)                                         */
+/*                                                                     */
+/* GPIO26 is DAC channel 1 and drives the on-board FM8002A class-AB    */
+/* audio amplifier. Only one of the two drivers below is compiled,     */
+/* selected by CONFIG_BSP_AMP_DRIVER_*.                                */
 /* ------------------------------------------------------------------ */
+
+#if CONFIG_BSP_AMP_DRIVER_BUZZER
 
 /** @brief Initialize the buzzer PWM. */
 esp_err_t bsp_buzzer_init(void);
@@ -173,16 +179,56 @@ esp_err_t bsp_buzzer_stop(void);
 /** @brief Emit a tone for @p duration_ms milliseconds (non blocking). */
 esp_err_t bsp_buzzer_beep(uint32_t freq_hz, uint32_t duration_ms);
 
+#endif /* CONFIG_BSP_AMP_DRIVER_BUZZER */
+
+#if CONFIG_BSP_AMP_DRIVER_DAC
+
+  /** Lowest/highest tone frequency the UI should offer. */
+  #define BSP_AUDIO_FREQ_MIN      20
+  #define BSP_AUDIO_FREQ_MAX      1500
+
+  /** Default output volume in percent of full scale (0..100). */
+  #define BSP_AUDIO_VOLUME_DEFAULT 38
+
+/**
+ * @brief Initialize the DAC in continuous (DMA) mode on GPIO26 (DAC1) and
+ *        start the sine generation task. Output starts silenced.
+ */
+esp_err_t bsp_audio_init(void);
+
+/**
+ * @brief Set the generated sine frequency (clamped to BSP_AUDIO_FREQ_MIN..MAX).
+ */
+esp_err_t bsp_audio_set_frequency(uint32_t freq_hz);
+
+/** @brief Get the configured sine frequency in Hz. */
+uint32_t bsp_audio_get_frequency(void);
+
+  /** @brief Enable or disable the tone output (disabled = silent mid-rail). */
+  esp_err_t bsp_audio_set_enabled(bool enabled);
+
+  /** @brief Whether the tone output is currently enabled. */
+  bool bsp_audio_is_enabled(void);
+
+  /** @brief Set the output volume (percent, clamped to 0..100). */
+  esp_err_t bsp_audio_set_volume(uint32_t percent);
+
+  /** @brief Get the configured output volume in percent. */
+  uint32_t bsp_audio_get_volume(void);
+
+#endif /* CONFIG_BSP_AMP_DRIVER_DAC */
+
 /* ------------------------------------------------------------------ */
 /* LDR (light sensor)                                                  */
 /* ------------------------------------------------------------------ */
 
 /**
- * @brief Initialize the LDR using the ADC continuous (DMA) driver.
+ * @brief Initialize the LDR using the one-shot ADC driver.
  *
- * A dedicated task (pinned to CONFIG_BSP_LDR_TASK_CORE) streams ADC1 channel 6
- * through DMA at up to CONFIG_BSP_LDR_SAMPLE_FREQ_HZ and keeps a running
- * average. Call bsp_ldr_read() to fetch it.
+ * A dedicated task (pinned to CONFIG_BSP_LDR_TASK_CORE) polls ADC1 channel 6
+ * at CONFIG_BSP_LDR_POLL_HZ and keeps a running average, published every 5 ms.
+ * One-shot mode is used because the DAC continuous audio engine owns I2S0 on
+ * this chip. Call bsp_ldr_read() to fetch the value.
  */
 esp_err_t bsp_ldr_init(void);
 

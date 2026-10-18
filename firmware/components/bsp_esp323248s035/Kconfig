@@ -76,22 +76,67 @@ menu "BSP ESP32-3248S035"
                 core from the ADC sampling task to spread the load.
     endif
 
-    config BSP_LDR_SAMPLE_FREQ_HZ
-        int "LDR ADC continuous sampling frequency (Hz)"
-        range 20000 2000000
-        default 2000000
+    config BSP_LDR_POLL_HZ
+        int "LDR ADC polling frequency (Hz)"
+        range 50 5000
+        default 1000
         help
-            Requested sampling frequency for the LDR ADC (ADC1 continuous/DMA
-            mode). The SOC supports up to 2 MHz; the achieved rate is reported
-            by bsp_ldr_sample_rate(). Note the actual rate may be lower and the
-            ESP32 SAR ADC is most linear around 6 kHz, so heavy oversampling is
-            used to improve the effective resolution.
+            How often the LDR task reads ADC1 channel 6 (one-shot mode).
+            One-shot reads are used instead of the continuous/DMA driver
+            because the DAC continuous audio engine owns I2S0 on the ESP32.
+            Higher rates give better oversampling; samples are averaged and
+            published every 5 ms.
 
     config BSP_LDR_TASK_CORE
         int "LDR sampling task core"
         range 0 1
         default 1
         help
-            CPU the ADC DMA draining task is pinned to.
+            CPU the LDR polling task is pinned to.
+
+    choice BSP_AMP_DRIVER
+        prompt "GPIO26 amplifier driver"
+        default BSP_AMP_DRIVER_DAC
+        help
+            GPIO26 is DAC channel 1 and drives the on-board FM8002A class-AB
+            audio amplifier (always powered, no enable pin). It can be driven
+            either as a square-wave "buzzer" with LEDC, or with the DAC in
+            continuous DMA mode for real analogue audio.
+
+        config BSP_AMP_DRIVER_BUZZER
+            bool "LEDC square-wave buzzer"
+        config BSP_AMP_DRIVER_DAC
+            bool "DAC continuous (DMA) sine / audio"
+    endchoice
+
+    if BSP_AMP_DRIVER_DAC
+        config BSP_AUDIO_SAMPLE_RATE_HZ
+            int "DAC audio sample rate (Hz)"
+            range 40000 2000000
+            default 200000
+            help
+                DAC continuous (DMA) sample rate. Must exceed twice the highest
+                tone (the UI slider goes up to 1500 Hz), hence at least 3 kHz.
+
+        config BSP_AUDIO_TASK_CORE
+            int "Audio generation task core"
+            range 0 1
+            default 1
+
+        config BSP_AUDIO_BUF_SAMPLES
+            int "Samples generated per DMA write"
+            range 256 16384
+            default 4096
+
+        config BSP_AUDIO_AMPLITUDE
+            int "Sine amplitude (0..127)"
+            range 1 127
+            default 100
+
+        config BSP_AUDIO_DEFAULT_FREQ_HZ
+            int "Default tone frequency (Hz)"
+            range 20 1500
+            default 320
+    endif
 
 endmenu
