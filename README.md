@@ -1,8 +1,17 @@
 # ESP32-3248S035-CYD-BSP-DEMO
 
+[![Platform](https://img.shields.io/badge/platform-ESP32-blue)]()
+[![ESP-IDF](https://img.shields.io/badge/ESP--IDF-v6.1-red)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+[![LVGL](https://img.shields.io/badge/LVGL-9-blueviolet)](https://lvgl.io/)
+[![Board](https://img.shields.io/badge/board-Sunton%20ESP32--3248S035-orange)]()
+[![Display](https://img.shields.io/badge/display-ST7796%20480x320-green)]()
+[![Language](https://img.shields.io/badge/language-C-00599C)]()
+
 A peripheral demo for the **Sunton ESP32-3248S035** — the 3.5" 480×320
 "**CYD**" (Cheap Yellow Display) board with **capacitive GT911 touch** and a
 microSD slot — written as a native **ESP-IDF v6.1** project.
+
+![ESP32-3248S035-CYD-BSP-DEMO banner](docs/banner.jpg)
 
 The application is a small two‑tab instrument built on **LVGL 9**:
 
