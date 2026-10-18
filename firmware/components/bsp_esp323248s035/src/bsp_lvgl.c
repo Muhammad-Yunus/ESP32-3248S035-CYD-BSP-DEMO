@@ -167,8 +167,9 @@ esp_err_t bsp_lvgl_init(void)
     ESP_RETURN_ON_ERROR(esp_timer_start_periodic(s_tick, CONFIG_BSP_LVGL_TICK_MS * 1000ULL),
                         TAG, "tick start");
 
-    BaseType_t ok = xTaskCreate(lvgl_task, "lvgl", CONFIG_BSP_LVGL_TASK_STACK, NULL,
-                                CONFIG_BSP_LVGL_TASK_PRIORITY, &s_task);
+    BaseType_t ok = xTaskCreatePinnedToCore(lvgl_task, "lvgl", CONFIG_BSP_LVGL_TASK_STACK, NULL,
+                                            CONFIG_BSP_LVGL_TASK_PRIORITY, &s_task,
+                                            CONFIG_BSP_LVGL_TASK_CORE);
     ESP_RETURN_ON_FALSE(ok == pdPASS, ESP_ERR_NO_MEM, TAG, "no mem for task");
 
     ESP_LOGI(TAG, "LVGL %d.%d initialized (%ux%u)",

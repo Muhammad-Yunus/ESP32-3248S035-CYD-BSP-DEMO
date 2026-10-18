@@ -177,11 +177,20 @@ esp_err_t bsp_buzzer_beep(uint32_t freq_hz, uint32_t duration_ms);
 /* LDR (light sensor)                                                  */
 /* ------------------------------------------------------------------ */
 
-/** @brief Initialize the LDR ADC. */
+/**
+ * @brief Initialize the LDR using the ADC continuous (DMA) driver.
+ *
+ * A dedicated task (pinned to CONFIG_BSP_LDR_TASK_CORE) streams ADC1 channel 6
+ * through DMA at up to CONFIG_BSP_LDR_SAMPLE_FREQ_HZ and keeps a running
+ * average. Call bsp_ldr_read() to fetch it.
+ */
 esp_err_t bsp_ldr_init(void);
 
-/** @brief Read the raw ADC value (0..4095). */
+/** @brief Read the latest averaged ADC value (0..4095). */
 esp_err_t bsp_ldr_read(int *raw);
+
+/** @brief Measured ADC sample rate in samples per second (0 until measured). */
+uint32_t bsp_ldr_sample_rate(void);
 
 /* ------------------------------------------------------------------ */
 /* microSD card                                                        */

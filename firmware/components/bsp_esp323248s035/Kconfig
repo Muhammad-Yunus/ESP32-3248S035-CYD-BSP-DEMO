@@ -66,6 +66,32 @@ menu "BSP ESP32-3248S035"
         config BSP_LVGL_TASK_STACK
             int "LVGL handler task stack size (bytes)"
             default 6144
+
+        config BSP_LVGL_TASK_CORE
+            int "LVGL handler task core"
+            range 0 1
+            default 0
+            help
+                CPU the LVGL handler task is pinned to. Keep it on the opposite
+                core from the ADC sampling task to spread the load.
     endif
+
+    config BSP_LDR_SAMPLE_FREQ_HZ
+        int "LDR ADC continuous sampling frequency (Hz)"
+        range 20000 2000000
+        default 2000000
+        help
+            Requested sampling frequency for the LDR ADC (ADC1 continuous/DMA
+            mode). The SOC supports up to 2 MHz; the achieved rate is reported
+            by bsp_ldr_sample_rate(). Note the actual rate may be lower and the
+            ESP32 SAR ADC is most linear around 6 kHz, so heavy oversampling is
+            used to improve the effective resolution.
+
+    config BSP_LDR_TASK_CORE
+        int "LDR sampling task core"
+        range 0 1
+        default 1
+        help
+            CPU the ADC DMA draining task is pinned to.
 
 endmenu
