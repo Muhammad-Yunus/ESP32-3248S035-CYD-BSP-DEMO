@@ -1,0 +1,71 @@
+menu "BSP ESP32-3248S035"
+
+    config BSP_TFT_SPI_CLK_HZ
+        int "ST7796 SPI clock frequency (Hz)"
+        range 1000000 80000000
+        default 80000000
+        help
+            SPI clock used for the display. The original Arduino BSP runs the
+            panel at 80 MHz.
+
+    choice BSP_TFT_ROTATION
+        prompt "Default display rotation"
+        default BSP_TFT_ROTATION_270
+        help
+            Rotation applied at initialization. 270 degrees corresponds to the
+            native "wide" (landscape) orientation of the Arduino BSP
+            (MADCTL = 0xE0).
+
+        config BSP_TFT_ROTATION_0
+            bool "0 degrees (portrait)"
+        config BSP_TFT_ROTATION_90
+            bool "90 degrees (landscape)"
+        config BSP_TFT_ROTATION_180
+            bool "180 degrees (portrait inverted)"
+        config BSP_TFT_ROTATION_270
+            bool "270 degrees (landscape inverted, default)"
+    endchoice
+
+    config BSP_TFT_BACKLIGHT_DEFAULT
+        int "Default backlight brightness (percent)"
+        range 0 100
+        default 100
+
+    config BSP_LVGL
+        bool "Enable the LVGL port"
+        default y
+        help
+            Create a display, an input device, a tick timer and a handler task
+            for LVGL 9. Requires the lvgl/lvgl component (see
+            idf_component.yml).
+
+    if BSP_LVGL
+
+        config BSP_LVGL_BUFFER_LINES
+            int "LVGL draw buffer height (lines)"
+            range 1 80
+            default 10
+            help
+                Number of display lines per draw buffer. Two buffers of
+                (rotated width x this value) are allocated in DMA capable RAM.
+
+        config BSP_LVGL_TICK_MS
+            int "LVGL tick period (ms)"
+            range 1 100
+            default 10
+
+        config BSP_LVGL_TASK_PERIOD_MS
+            int "LVGL handler task period (ms)"
+            range 1 100
+            default 20
+
+        config BSP_LVGL_TASK_PRIORITY
+            int "LVGL handler task priority"
+            default 4
+
+        config BSP_LVGL_TASK_STACK
+            int "LVGL handler task stack size (bytes)"
+            default 6144
+    endif
+
+endmenu

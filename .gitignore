@@ -1,0 +1,11 @@
+# ESP-IDF build output
+build/
+sdkconfig.old
+
+# Component Manager downloads (restored from dependencies.lock + idf_component.yml)
+managed_components/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
