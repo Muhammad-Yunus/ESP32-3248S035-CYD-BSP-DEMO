@@ -1,4 +1,14 @@
 dependencies:
+  chmorgan/esp-libhelix-mp3:
+    component_hash: cbb76089dc2c5749f7b470e2e70aedc44c9da519e04eb9a67d4c7ec275229e53
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=4.1.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 1.0.3
   idf:
     source:
       type: idf
@@ -35,8 +45,9 @@ dependencies:
       type: service
     version: 9.6.0~1
 direct_dependencies:
+- chmorgan/esp-libhelix-mp3
 - idf
 - lvgl/lvgl
-manifest_hash: 31171d716fd214d42f16b52f45fabf4b133b3b3f3aadb7dc160c89dedd223a79
+manifest_hash: 793306d9bf752c38c9e8a4248895da19acff968048b34f1c424e22222cd7472f
 target: esp32
 version: 3.0.0

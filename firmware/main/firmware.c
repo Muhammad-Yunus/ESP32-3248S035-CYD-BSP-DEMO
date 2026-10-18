@@ -7,9 +7,11 @@
  * averaged value every 10 ms, smooths it with an exponential moving average
  * and pushes one point per 100 ms to a FIFO time-series chart (auto-scaled Y
  * axis). Three sliders drive the RGB LED, plus a frequency slider and enable
- * switch for the DAC tone on GPIO26.
+ * switch for the DAC tone on GPIO26. A second tab hosts a microSD file
+ * explorer (see file_explorer.c).
  */
 #include "bsp_esp323248s035.h"
+#include "file_explorer.h"
 
 #include <stdio.h>
 #include <inttypes.h>
@@ -236,30 +238,26 @@ static lv_obj_t *create_panel(lv_obj_t *parent, int x, int y, int w, int h)
     return panel;
 }
 
-static void build_ui(void)
+static void build_monitoring_tab(lv_obj_t *parent)
 {
-    lv_obj_t *scr = lv_screen_active();
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0B0F14), 0);
-    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+    /* 6 px margin / gap between the three containers, 8 px padding */
+    create_panel(parent, 6, 6, 290, 268);
+    create_panel(parent, 302, 6, 174, 132);
+    create_panel(parent, 302, 144, 174, 130);
 
-    /* 6 px screen margin / gap between the three containers, 8 px padding */
-    create_panel(scr, 6, 6, 290, 307);
-    create_panel(scr, 302, 6, 174, 147);
-    create_panel(scr, 302, 159, 174, 154);
-
-    lv_obj_t *title = lv_label_create(scr);
+    lv_obj_t *title = lv_label_create(parent);
     lv_label_set_text(title, "LDR Monitor");
     lv_obj_set_style_text_color(title, lv_color_hex(0xE6EDF3), 0);
     lv_obj_set_pos(title, 14, 14);
 
-    s_adc_label = lv_label_create(scr);
+    s_adc_label = lv_label_create(parent);
     lv_label_set_text(s_adc_label, "ADC ----   --%");
     lv_obj_set_style_text_color(s_adc_label, lv_color_hex(0x39D2C0), 0);
     lv_obj_set_pos(s_adc_label, 170, 14);
 
-    s_chart = lv_chart_create(scr);
-    lv_obj_set_pos(s_chart, 14, 46);
-    lv_obj_set_size(s_chart, 274, 235);
+    s_chart = lv_chart_create(parent);
+    lv_obj_set_pos(s_chart, 14, 42);
+    lv_obj_set_size(s_chart, 274, 196);
     lv_chart_set_type(s_chart, LV_CHART_TYPE_LINE);
     lv_chart_set_point_count(s_chart, CHART_POINTS);
     lv_chart_set_range(s_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 64);
@@ -272,46 +270,98 @@ static void build_ui(void)
     lv_obj_set_style_width(s_chart, 0, LV_PART_INDICATOR);
     lv_obj_set_style_height(s_chart, 0, LV_PART_INDICATOR);
 
-    lv_obj_t *caption = lv_label_create(scr);
+    lv_obj_t *caption = lv_label_create(parent);
     lv_label_set_text(caption, "time ->   (100 ms / sample)");
     lv_obj_set_style_text_color(caption, lv_color_hex(0x6E7B8B), 0);
-    lv_obj_set_pos(caption, 14, 286);
+    lv_obj_set_pos(caption, 14, 246);
 
-    lv_obj_t *led_title = lv_label_create(scr);
+    lv_obj_t *led_title = lv_label_create(parent);
     lv_label_set_text(led_title, "LED control");
     lv_obj_set_style_text_color(led_title, lv_color_hex(0xE6EDF3), 0);
     lv_obj_set_pos(led_title, 311, 15);
 
-    create_rgb_row(scr, 0, "R", lv_color_hex(0xF04444), 39);
-    create_rgb_row(scr, 1, "G", lv_color_hex(0x44E05A), 77);
-    create_rgb_row(scr, 2, "B", lv_color_hex(0x4488FF), 115);
+    create_rgb_row(parent, 0, "R", lv_color_hex(0xF04444), 34);
+    create_rgb_row(parent, 1, "G", lv_color_hex(0x44E05A), 66);
+    create_rgb_row(parent, 2, "B", lv_color_hex(0x4488FF), 98);
 
-    lv_obj_t *spk_title = lv_label_create(scr);
+    lv_obj_t *spk_title = lv_label_create(parent);
     lv_label_set_text(spk_title, "Speaker (DAC)");
     lv_obj_set_style_text_color(spk_title, lv_color_hex(0xE6EDF3), 0);
-    lv_obj_set_pos(spk_title, 311, 169);
+    lv_obj_set_pos(spk_title, 311, 152);
 
-    create_freq_row(scr, 191);
-    create_volume_row(scr, 234);
-    create_tone_row(scr, 311, 276);
+    create_freq_row(parent, 172);
+    create_volume_row(parent, 210);
+    create_tone_row(parent, 311, 248);
+}
+
+static void build_ui(void)
+{
+    lv_obj_t *scr = lv_screen_active();
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x0B0F14), 0);
+    lv_obj_remove_flag(scr, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *tv = lv_tabview_create(scr);
+    lv_obj_set_size(tv, 480, 320);
+    lv_obj_set_pos(tv, 0, 0);
+    lv_obj_set_style_bg_color(tv, lv_color_hex(0x0B0F14), 0);
+    lv_tabview_set_tab_bar_size(tv, 38);
+
+    lv_obj_t *bar = lv_tabview_get_tab_bar(tv);
+    lv_obj_set_style_bg_color(bar, lv_color_hex(0x0B0F14), 0);
+    lv_obj_set_style_pad_all(bar, 4, 0);
+    lv_obj_set_style_pad_bottom(bar, 0, 0);
+    lv_obj_set_style_pad_column(bar, 6, 0);
+    /* thin baseline under the whole tab bar */
+    lv_obj_set_style_border_side(bar, LV_BORDER_SIDE_BOTTOM, 0);
+    lv_obj_set_style_border_width(bar, 1, 0);
+    lv_obj_set_style_border_color(bar, lv_color_hex(0x1F2A37), 0);
+
+    lv_obj_t *mon = lv_tabview_add_tab(tv, "Monitoring & Control");
+    lv_obj_t *files = lv_tabview_add_tab(tv, "File Explorer");
+
+    for (uint32_t i = 0; i < 2; i++) {
+        lv_obj_t *btn = lv_tabview_get_tab_button(tv, i);
+        lv_obj_set_style_text_color(btn, lv_color_hex(0xC9D4E0), LV_PART_MAIN | LV_STATE_CHECKED);
+        lv_obj_set_style_text_color(btn, lv_color_hex(0x6E7B8B), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0x1B2A3A), LV_PART_MAIN | LV_STATE_CHECKED);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0x111822), LV_PART_MAIN);
+        lv_obj_set_style_radius(btn, 8, 0);
+        lv_obj_set_style_shadow_width(btn, 0, 0);
+        /* the active tab gets a thick accent underline instead */
+        lv_obj_set_style_border_width(btn, 0, 0);
+        lv_obj_set_style_border_side(btn, LV_BORDER_SIDE_BOTTOM, LV_STATE_CHECKED);
+        lv_obj_set_style_border_width(btn, 3, LV_STATE_CHECKED);
+        lv_obj_set_style_border_color(btn, lv_color_hex(0x39D2C0), LV_STATE_CHECKED);
+    }
+
+    lv_obj_set_style_bg_color(mon, lv_color_hex(0x0B0F14), 0);
+    lv_obj_set_style_pad_all(mon, 0, 0);
+    lv_obj_remove_flag(mon, LV_OBJ_FLAG_SCROLLABLE);
+
+    build_monitoring_tab(mon);
+    file_explorer_create(files);
 }
 
 void app_main(void)
 {
     ESP_ERROR_CHECK(bsp_init());
 
+    if (bsp_sd_mount("/sdcard") != ESP_OK) {
+        ESP_LOGW(TAG, "SD card not mounted, file explorer will be empty");
+    }
+
     if (!bsp_lvgl_lock(portMAX_DELAY)) {
         ESP_LOGE(TAG, "failed to lock LVGL");
         return;
     }
     build_ui();
-    lv_obj_add_state(s_tone_switch, LV_STATE_CHECKED);
     bsp_lvgl_unlock();
 
     bsp_audio_set_frequency(FREQ_DEFAULT);
-    bsp_audio_set_enabled(true);
+    bsp_audio_set_volume(BSP_AUDIO_VOLUME_DEFAULT);
+    bsp_audio_set_enabled(false);
 
     xTaskCreate(ldr_task, "ldr", 3072, NULL, 3, NULL);
 
-    ESP_LOGI(TAG, "demo started (LDR chart + RGB LED + DAC speaker)");
+    ESP_LOGI(TAG, "demo started (LDR chart + RGB LED + DAC speaker + file explorer)");
 }

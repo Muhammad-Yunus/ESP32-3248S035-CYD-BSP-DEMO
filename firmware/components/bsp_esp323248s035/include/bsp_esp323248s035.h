@@ -216,6 +216,32 @@ uint32_t bsp_audio_get_frequency(void);
   /** @brief Get the configured output volume in percent. */
   uint32_t bsp_audio_get_volume(void);
 
+  /**
+   * @brief Start PCM streaming through the DAC, replacing the generated tone.
+   *
+   * Mono 16-bit samples written with bsp_audio_pcm_write() are resampled
+   * (linear interpolation) to the DAC sample rate and output through GPIO26.
+   * While a stream is active bsp_audio_set_enabled() is ignored; the tone
+   * resumes automatically once bsp_audio_pcm_stop() is called.
+   *
+   * @param sample_rate_hz Source sample rate in Hz (8000..48000).
+   */
+  esp_err_t bsp_audio_pcm_start(uint32_t sample_rate_hz);
+
+  /**
+   * @brief Queue mono 16-bit PCM samples for playback.
+   *
+   * Blocks until all @p count frames are queued, so the caller naturally
+   * paces itself. Returns ESP_ERR_INVALID_STATE once the stream is stopped.
+   */
+  esp_err_t bsp_audio_pcm_write(const int16_t *frames, size_t count);
+
+  /** @brief Stop PCM streaming and return to tone/silence mode. */
+  esp_err_t bsp_audio_pcm_stop(void);
+
+  /** @brief Whether a PCM stream is currently active. */
+  bool bsp_audio_pcm_active(void);
+
 #endif /* CONFIG_BSP_AMP_DRIVER_DAC */
 
 /* ------------------------------------------------------------------ */
